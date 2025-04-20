@@ -1,33 +1,38 @@
 🩺 Medical Text Analysis Web App
-This project is a web-based application designed to analyze medical reports and extract meaningful information automatically. It takes unstructured text from patient reports and converts it into structured data, making it easier to store, interpret, and use for further analysis.
+This project is a responsive and user-friendly web application designed to display and manage extracted patient medical information. Built with HTML, CSS, and JavaScript, it simulates the frontend of a healthcare record viewer, showcasing details such as patient demographics, medical conditions, medications, symptoms, and test results.
 
-🚀 Features:
-Upload and analyze PDF/DOCX medical reports
+💡 Features
+🔹 Clean, modern UI with a health-oriented color palette
 
-Extracts key information and presents it in a tabular format
+🔹 Loading animation for enhanced user experience
 
-Assigns a unique ID to each patient and stores the report for future reference
+🔹 Responsive table layout displaying structured medical data
 
-Simple and intuitive web interface for ease of use
+🔹 Buttons to simulate storing patient records and navigating back home
 
-Built-in Machine Learning pipeline for intelligent text classification
+🔹 Footer for branding and copyright
 
-🛠️ Tech Stack:
-Frontend: HTML, CSS, JavaScript
+🎨 Tech Stack
+HTML5
 
-Backend: Flask
+CSS3
 
-ML/NLP: Scikit-learn, Python
+JavaScript (Vanilla)
 
-Document Parsing: PyPDF2, python-docx
+📁 Use Case
+This project can be used as a frontend component in:
 
-Deployment: Render
+Electronic Health Record (EHR) systems
 
-📦 How It Works:
-Upload a patient’s medical report (PDF or DOCX)
+Medical NLP applications (e.g., Amazon Comprehend Medical)
 
-The backend parses and processes the text
+Patient management dashboards
 
-Extracted details are displayed in a user-friendly format
+Healthcare data visualization tools
 
-All data is stored with a unique Patient ID
+🚀 How to Use
+Clone the repository
+
+Open index.html in your browser
+
+View and interact with the patient records
