@@ -1,4 +1,4 @@
-from flask import Flask, request, render_template_string, flash
+from flask import Flask, request, render_template_string, flash, redirect, url_for
 import PyPDF2
 from docx import Document
 import re
@@ -28,8 +28,6 @@ def extract_text_from_docx(file):
     return text
 
 def extract_cgpa(text):
-    # More comprehensive patterns for CGPA extraction
-    # Updated CGPA regex pattern
     cgpa_patterns = [
         r'(?:cgpa|gpa)[\s:]*([0-9]{1,2}(?:\.[0-9]{1,2})?)',
         r'(?:cgpa|gpa)[\s:]*([0-9]{1,2}(?:\.[0-9]{1,2})?)\s*/\s*10',
@@ -37,7 +35,6 @@ def extract_cgpa(text):
         r'grade point average[\s:]*([0-9]{1,2}(?:\.[0-9]{1,2})?)',
         r'cumulative grade point average[\s:]*([0-9]{1,2}(?:\.[0-9]{1,2})?)'
     ]
-
     
     text_lower = text.lower()
     for pattern in cgpa_patterns:
@@ -45,7 +42,7 @@ def extract_cgpa(text):
         if match:
             try:
                 cgpa = float(match.group(1))
-                if 0 <= cgpa <= 10:  # Validate CGPA range
+                if 0 <= cgpa <= 10:
                     return cgpa
             except ValueError:
                 continue
@@ -82,7 +79,6 @@ def calculate_ats_score(text, cgpa=None):
     for category, data in keyword_categories.items():
         match_count = 0
         for keyword in data['keywords']:
-            # Use regex for better matching (like 'node', 'nodejs', 'node.js')
             if re.search(rf'\b{re.escape(keyword)}\b', text):
                 match_count += 1
 
@@ -95,7 +91,6 @@ def calculate_ats_score(text, cgpa=None):
             feedback.append(f"Consider adding more {category.replace('_', ' ')} to your resume.")
 
     return round(final_score, 2), feedback
-
 
 HTML_TEMPLATE = '''
 <!DOCTYPE html>
@@ -193,6 +188,20 @@ HTML_TEMPLATE = '''
     </style>
 </head>
 <body>
+  <!-- Flash message section -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            <div style="background: #ffeeba; color: #856404; padding: 15px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #ffeeba;">
+                <strong>Note:</strong>
+                <ul style="margin: 0;">
+                    {% for category, message in messages %}
+                        <li class="{{ category }}" style="list-style-type: none; margin: 5px 0;">{{ message }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        {% endif %}
+    {% endwith %}
+    
     <h2>Campus Placement Predictor</h2>
     <div style="background: #ffeeba; color: #856404; padding: 15px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #ffeeba;">
         <strong>Note:</strong> Please ensure your resume includes your CGPA information (e.g., "CGPA: 8.5" or "GPA: 8.5/10"). If not found, you'll need to enter it manually.
@@ -266,7 +275,8 @@ def index():
             elif file.filename.endswith('.docx'):
                 text = extract_text_from_docx(file)
             else:
-                return "Invalid file format. Please upload PDF or DOCX files only."
+                flash("Invalid file format. Please upload PDF or DOCX files only.", "error")
+                return redirect(request.url)
             
             # Calculate ATS score, feedback and extract CGPA
             ats_score, feedback = calculate_ats_score(text)
@@ -280,26 +290,22 @@ def index():
             else:
                 cgpa_input = request.form.get("cgpa", "")
                 if not cgpa_input:
-                    return "Please enter your CGPA since it couldn't be extracted from the resume"
+                    flash("Please enter your CGPA since it couldn't be extracted from the resume.", "error")
+                    return redirect(request.url)
                 try:
                     cgpa = float(cgpa_input)
                 except ValueError:
-                    return "Please enter a valid CGPA number"
+                    flash("Please enter a valid CGPA number.", "error")
+                    return redirect(request.url)
         else:
-            # Manual input with validation
-            cgpa_input = request.form.get("cgpa", "")
-            ats_score_input = request.form.get("ats_score", "")
-            
-            if not cgpa_input or not ats_score_input:
-                return "Please fill in both CGPA and ATS score"
-                
-            try:
-                cgpa = float(cgpa_input)
-                ats_score = float(ats_score_input)
-            except ValueError:
-                return "Please enter valid numerical values for CGPA and ATS score"
+            flash("Please upload a resume (PDF or DOCX).", "error")
+            return redirect(request.url)
         
-        # Prediction logic
+        # Handle manual CGPA and ATS input
+        if not cgpa or not ats_score:
+            flash("Please enter both CGPA and ATS score.", "error")
+            return redirect(request.url)
+        
         # Prediction logic
         if cgpa >= 9.0 and ats_score >= 75:
             result = "Excellent profile! You're highly competitive for campus placements!"
@@ -308,10 +314,11 @@ def index():
             result = "Good chance! Keep your resume sharp and prepare for interviews."
             placed = True
         else:
-            result = "You can improve! Boost your resume and gain more experience to stand out."
+           
+        else:
+            result = "Your profile needs improvement. Consider enhancing your resume and gaining more experience."
             placed = False
 
-    
     return render_template_string(
         HTML_TEMPLATE,
         result=result,
@@ -319,8 +326,9 @@ def index():
         cgpa=cgpa,
         ats_score=ats_score,
         uploaded_resume=uploaded_resume,
-        extracted_cgpa=extracted_cgpa
+        extracted_cgpa=extracted_cgpa,
+        feedback=feedback if uploaded_resume else None
     )
 
 if __name__ == "__main__":
-    app.run(host='0.0.0.0', port=5000)
+    app.run(host='0.0.0.0', port=5000, debug=True)
